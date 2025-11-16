@@ -1,0 +1,11 @@
+{
+  "first_name":"John",
+  "last_name":"Doe",
+  "email":"john.doe@example.com",
+  "dob":"2010-05-15",
+  "gender":"male",
+  "phone":"0123456789",
+  "address":"1 School St",
+  "class_id":"18d61723-a70a-47a1-b63f-38b1c771c584",
+  "admission_no":"A12345"
+}
