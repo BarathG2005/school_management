@@ -126,3 +126,76 @@ async def require_parent(current_user: TokenPayload = Depends(get_current_user))
             detail="Parent access required"
         )
     return current_user
+
+
+# [File: server/app/core/security.py]
+# ... (imports)
+
+# ... (hash_password, verify_password, create_access_token, etc. are unchanged)
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> TokenPayload:
+    """Get current authenticated user from token"""
+    token = credentials.credentials
+    return verify_token(token)
+
+async def require_role(required_roles: list[UserRole]):
+    """Dependency to check if user has required role"""
+    async def role_checker(current_user: TokenPayload = Depends(get_current_user)):
+        if current_user.role not in required_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied. Required roles: {[r.value for r in required_roles]}"
+            )
+        return current_user
+    return role_checker
+
+# Role-based dependencies
+
+async def require_master(current_user: TokenPayload = Depends(get_current_user)):
+    """Require master role"""
+    if current_user.role != UserRole.MASTER:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Master access required"
+        )
+    return current_user
+
+async def require_admin(current_user: TokenPayload = Depends(get_current_user)):
+    """Require admin or master role"""
+    # MODIFIED: Master role now satisfies admin requirements
+    if current_user.role not in [UserRole.ADMIN, UserRole.MASTER]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    return current_user
+
+async def require_teacher(current_user: TokenPayload = Depends(get_current_user)):
+    """Require teacher, admin, or master role"""
+    # MODIFIED: Master role now satisfies teacher requirements
+    if current_user.role not in [UserRole.TEACHER, UserRole.ADMIN, UserRole.MASTER]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Teacher access required"
+        )
+    return current_user
+
+async def require_student(current_user: TokenPayload = Depends(get_current_user)):
+    """Require student role"""
+    if current_user.role != UserRole.STUDENT:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Student access required"
+        )
+    return current_user
+
+async def require_parent(current_user: TokenPayload = Depends(get_current_user)):
+    """Require parent role"""
+    if current_user.role != UserRole.PARENT:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Parent access required"
+        )
+    return current_user

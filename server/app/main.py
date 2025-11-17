@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 import logging
 
 from app.api.v1.endpoints import auth, students, teachers, parents, classes
+from app.api.v1.endpoints import admin
 from app.api.v1.endpoints import attendance, exams, marks, homework, fees
 from app.api.v1.endpoints import timetable, announcements, leave_requests, dashboard
 from app.core.config import settings
@@ -67,6 +68,7 @@ async def health_check():
 
 # Include API routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
+app.include_router(admin.router, prefix="/api/v1/admin", tags=["Admin Management (Master)"])
 app.include_router(students.router, prefix="/api/v1/students", tags=["Students"])
 app.include_router(teachers.router, prefix="/api/v1/teachers", tags=["Teachers"])
 app.include_router(parents.router, prefix="/api/v1/parents", tags=["Parents"])

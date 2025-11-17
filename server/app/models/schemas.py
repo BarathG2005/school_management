@@ -21,6 +21,7 @@ class UserRole(str, Enum):
     TEACHER = "teacher"
     STUDENT = "student"
     PARENT = "parent"
+    MASTER = "master"
 
 
 class AttendanceStatus(str, Enum):

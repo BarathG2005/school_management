@@ -293,3 +293,68 @@ async def change_password(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to change password"
         )
+    
+    # [File: server/app/api/v1/endpoints/auth.py]
+# ... (imports)
+from app.models.schemas import (UserCreate, UserLogin, Token, UserResponse, UserRole, TokenPayload)
+# ...
+
+@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def register_user(user_data: UserCreate):
+    """
+    Register a new user (e.g., Student or Parent).
+    Admin and Master accounts cannot be created via this public endpoint.
+    """
+    supabase = get_supabase_client()
+    db = SupabaseQueries(supabase)
+    
+    try:
+        # Always force public registrations to be regular students
+        # (ignore any role provided by the client to avoid accidental admin creation)
+        if user_data.role in [UserRole.ADMIN]:
+            # log and ignore if client attempted to set admin role
+            logger.warning(f"Public registration attempted with elevated role: {user_data.role}. Forcing to STUDENT.")
+
+
+        # Check if user already exists
+        existing = supabase.table("users").select("*").eq("email", user_data.email).execute()
+        if existing.data:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User with this email already exists"
+            )
+        
+        # Hash password
+        hashed_password = hash_password(user_data.password)
+        
+        # Create user record
+        # Force role to STUDENT for public registrations
+        user_dict = {
+            "email": user_data.email,
+            "password_hash": hashed_password,
+            "role": UserRole.STUDENT.value,
+            "is_active": user_data.is_active
+        }
+        
+        new_user = await db.insert_one("users", user_dict)
+        
+        logger.info(f"User registered: {user_data.email} with role {user_data.role}")
+        
+        return UserResponse(
+            user_id=new_user["user_id"],
+            email=new_user["email"],
+            role=UserRole(new_user["role"]),
+            is_active=new_user["is_active"],
+            created_at=new_user["created_at"]
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Registration error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Registration failed"
+        )
+
+# ... (rest of the file is unchanged)
